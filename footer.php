@@ -1,3 +1,3 @@
-</div> <!-- Fin du .container -->
+</div> <!-- Fin du .container du jeu clickvault-->
 </body>
 </html>
