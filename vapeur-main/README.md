@@ -1,2 +1,0 @@
-# vapeur
-game manager
