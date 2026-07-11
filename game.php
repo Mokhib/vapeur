@@ -1,63 +1,73 @@
-<?php 
-include 'header.php'; 
+<?php
+// Fiche d'un jeu + avis. Toute redirection doit se faire AVANT l'inclusion de header.php.
+require_once 'parametrage/param.php';
+require_once 'fonction/fonctions.php';
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    die("<p>Jeu introuvable.</p>");
+    header('Location: index.php');
+    exit();
 }
-$id_game = (int)$_GET['id'];
 
-// Gestion de l'ajout d'un avis
+$idJeu = (int)$_GET['id'];
+$jeu = obtenirJeuParId($pdo, $idJeu);
+
+if (!$jeu) {
+    header('Location: index.php');
+    exit();
+}
+
+$erreurAvis = '';
+$succesAvis = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['id_user'])) {
-    $rating = (int)$_POST['rating'];
-    $comment = mysqli_real_escape_string($connexion, trim($_POST['comment']));
-    
-    // rating est un tinyint(1) dans la base[cite: 7]
-    if ($rating >= 1 && $rating <= 5 && !empty($comment)) {
-        $id_user = $_SESSION['id_user'];
-        // Insertion dans la table reviews[cite: 7]
-        $insertQuery = "INSERT INTO reviews (id_user, id_game, rating, comment) VALUES (?, ?, ?, ?)";
-        $stmt = mysqli_prepare($connexion, $insertQuery);
-        mysqli_stmt_bind_param($stmt, "iiis", $id_user, $id_game, $rating, $comment);
-        mysqli_stmt_execute($stmt);
-        echo "<div class='alert'>Votre avis a été ajouté avec succès !</div>";
+    $note = (int)$_POST['note'];
+    $commentaire = trim($_POST['commentaire']);
+
+    if (publierAvis($pdo, (int)$_SESSION['id_user'], $idJeu, $note, $commentaire)) {
+        $succesAvis = 'Votre avis a été ajouté avec succès !';
     } else {
-        echo "<div class='alert error'>Veuillez fournir une note entre 1 et 5 et un commentaire.</div>";
+        $erreurAvis = 'Veuillez fournir une note entre 1 et 5 et un commentaire.';
     }
 }
 
-// Récupération des informations du jeu[cite: 7]
-$gameQuery = "SELECT * FROM games WHERE id_game = ?";
-$stmt = mysqli_prepare($connexion, $gameQuery);
-mysqli_stmt_bind_param($stmt, "i", $id_game);
-mysqli_stmt_execute($stmt);
-$gameResult = mysqli_stmt_get_result($stmt);
-$game = mysqli_fetch_assoc($gameResult);
+$listeAvis = obtenirAvisJeu($pdo, $idJeu);
 
-if (!$game) {
-    die("<p>Jeu introuvable.</p>");
-}
+$titrePage = $jeu['title'] . ' - ' . SITE_NAME;
+$descriptionPage = 'Avis et notes de la communauté pour ' . $jeu['title'] . ' (' . $jeu['release_year'] . '), par ' . $jeu['developer'] . '.';
+include 'header.php';
 ?>
 
-<h1><?= htmlspecialchars($game['title']) ?> (<?= htmlspecialchars($game['release_year']) ?>)</h1>
-<p><strong>Développeur :</strong> <?= htmlspecialchars($game['developer']) ?></p>
-<p><strong>Description :</strong> <?= nl2br(htmlspecialchars($game['description'])) ?></p>
+<h1><?= htmlspecialchars($jeu['title']) ?> (<?= htmlspecialchars($jeu['release_year']) ?>)</h1>
+<p><strong>Développeur :</strong> <?= htmlspecialchars($jeu['developer']) ?></p>
 
-<hr style="margin: 2rem 0; border-color: #333;">
+<?php if (!empty($jeu['cover_image']) && file_exists('images/' . $jeu['cover_image'])): ?>
+    <img src="images/<?= htmlspecialchars($jeu['cover_image']) ?>" alt="Jaquette du jeu <?= htmlspecialchars($jeu['title']) ?>" class="game-cover game-cover--detail">
+<?php endif; ?>
+
+<p><strong>Description :</strong> <?= nl2br(htmlspecialchars($jeu['description'])) ?></p>
+
+<hr class="section-divider">
 
 <div class="reviews-section">
     <h2>Avis de la communauté</h2>
-    
+
+    <?php if ($erreurAvis): ?>
+        <div class="alert error"><?= htmlspecialchars($erreurAvis) ?></div>
+    <?php endif; ?>
+    <?php if ($succesAvis): ?>
+        <div class="alert success"><?= htmlspecialchars($succesAvis) ?></div>
+    <?php endif; ?>
+
     <?php if (isset($_SESSION['id_user'])): ?>
-        <form method="POST" action="" style="margin: 1rem 0; max-width: 100%; padding: 1rem;">
+        <form method="POST" action="" class="review-form">
             <h3>Laissez votre avis</h3>
             <div class="form-group">
-                <label>Note (sur 5)</label>
-                <!-- La note doit être compatible avec le tinyint(1)[cite: 7] -->
-                <input type="number" name="rating" min="1" max="5" required>
+                <label for="note">Note (sur 5)</label>
+                <input type="number" id="note" name="note" min="1" max="5" required>
             </div>
             <div class="form-group">
-                <label>Commentaire</label>
-                <textarea name="comment" required></textarea>
+                <label for="commentaire">Commentaire</label>
+                <textarea id="commentaire" name="commentaire" required></textarea>
             </div>
             <button type="submit" class="btn">Publier</button>
         </form>
@@ -65,38 +75,21 @@ if (!$game) {
         <p><a href="login.php">Connectez-vous</a> pour laisser un avis.</p>
     <?php endif; ?>
 
-    <div style="margin-top: 2rem;">
-        <?php
-        // Récupération des avis associés via id_game et jointure avec users pour le username[cite: 7]
-        $reviewQuery = "
-            SELECT r.rating, r.comment, r.created_at, u.username 
-            FROM reviews r 
-            JOIN users u ON r.id_user = u.id_user 
-            WHERE r.id_game = ? 
-            ORDER BY r.created_at DESC
-        ";
-        $stmtRev = mysqli_prepare($connexion, $reviewQuery);
-        mysqli_stmt_bind_param($stmtRev, "i", $id_game);
-        mysqli_stmt_execute($stmtRev);
-        $reviewsResult = mysqli_stmt_get_result($stmtRev);
-
-        if (mysqli_num_rows($reviewsResult) > 0) {
-            while ($review = mysqli_fetch_assoc($reviewsResult)) {
-                ?>
+    <div class="reviews-list">
+        <?php if (count($listeAvis) > 0): ?>
+            <?php foreach ($listeAvis as $avis): ?>
                 <div class="review-card">
                     <div class="review-header">
-                        <strong><?= htmlspecialchars($review['username']) ?></strong>
-                        <span class="rating"><?= str_repeat("★", $review['rating']) ?><?= str_repeat("☆", 5 - $review['rating']) ?></span>
-                        <span><?= date('d/m/Y', strtotime($review['created_at'])) ?></span>
+                        <strong><?= htmlspecialchars($avis['username']) ?></strong>
+                        <span class="rating"><?= str_repeat('★', $avis['rating']) ?><?= str_repeat('☆', 5 - $avis['rating']) ?></span>
+                        <span><?= date('d/m/Y', strtotime($avis['created_at'])) ?></span>
                     </div>
-                    <p><?= nl2br(htmlspecialchars($review['comment'])) ?></p>
+                    <p><?= nl2br(htmlspecialchars($avis['comment'])) ?></p>
                 </div>
-                <?php
-            }
-        } else {
-            echo "<p>Aucun avis pour ce jeu pour le moment.</p>";
-        }
-        ?>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p>Aucun avis pour ce jeu pour le moment.</p>
+        <?php endif; ?>
     </div>
 </div>
 

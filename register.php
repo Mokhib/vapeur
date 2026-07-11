@@ -1,70 +1,59 @@
-<?php 
-include 'header.php'; 
+<?php
+// Page d'inscription : la session doit être vérifiée AVANT toute sortie HTML (header.php inclus).
+require_once 'parametrage/param.php';
+require_once 'fonction/fonctions.php';
+redirigerSiConnecte();
 
-if (isset($_SESSION['id_user'])) {
-    header('Location: index.php');
-    exit();
-}
-
-$error = '';
-$success = '';
+$erreur = '';
+$succes = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
+    $pseudo = trim($_POST['pseudo']);
     $email = trim($_POST['email']);
-    $password = $_POST['password'];
+    $motDePasse = $_POST['motDePasse'];
+    $confirmationMotDePasse = $_POST['confirmationMotDePasse'];
 
-    // Vérifier si l'utilisateur existe déjà
-    $checkQuery = "SELECT id_user FROM users WHERE username = ? OR email = ?";
-    $stmtCheck = mysqli_prepare($connexion, $checkQuery);
-    mysqli_stmt_bind_param($stmtCheck, "ss", $username, $email);
-    mysqli_stmt_execute($stmtCheck);
-    $resultCheck = mysqli_stmt_get_result($stmtCheck);
+    $erreur = validerInscription($pdo, $pseudo, $email, $motDePasse, $confirmationMotDePasse);
 
-    if (mysqli_num_rows($resultCheck) > 0) {
-        $error = "Ce nom d'utilisateur ou cet email est déjà utilisé.";
-    } else {
-        // Hachage du mot de passe
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        
-        // Insertion dans la table users[cite: 7]
-        $insertQuery = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
-        $stmtInsert = mysqli_prepare($connexion, $insertQuery);
-        mysqli_stmt_bind_param($stmtInsert, "sss", $username, $email, $hashed_password);
-        
-        if (mysqli_stmt_execute($stmtInsert)) {
-            $success = "Inscription réussie ! Vous pouvez maintenant vous connecter.";
-        } else {
-            $error = "Erreur lors de l'inscription.";
-        }
+    if ($erreur === '' && creerUtilisateur($pdo, $pseudo, $email, $motDePasse)) {
+        $succes = 'Inscription réussie ! Vous pouvez maintenant vous connecter.';
+    } elseif ($erreur === '') {
+        $erreur = "Erreur lors de l'inscription.";
     }
 }
+
+$titrePage = SITE_NAME . ' - Inscription';
+include 'header.php';
 ?>
 
 <h1>Inscription</h1>
 
-<?php if ($error): ?>
-    <div class="alert error"><?= htmlspecialchars($error) ?></div>
+<?php if ($erreur): ?>
+    <div class="alert error"><?= htmlspecialchars($erreur) ?></div>
 <?php endif; ?>
-<?php if ($success): ?>
-    <div class="alert"><?= htmlspecialchars($success) ?></div>
+<?php if ($succes): ?>
+    <div class="alert success"><?= htmlspecialchars($succes) ?></div>
 <?php endif; ?>
 
 <form method="POST" action="register.php">
     <div class="form-group">
-        <label for="username">Nom d'utilisateur</label>
-        <input type="text" id="username" name="username" required>
+        <label for="pseudo">Pseudo</label>
+        <input type="text" id="pseudo" name="pseudo" minlength="3" required>
     </div>
     <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required>
     </div>
     <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <input type="password" id="password" name="password" required>
+        <label for="motDePasse">Mot de passe</label>
+        <input type="password" id="motDePasse" name="motDePasse" minlength="8" required>
+    </div>
+    <div class="form-group">
+        <label for="confirmationMotDePasse">Confirmer le mot de passe</label>
+        <input type="password" id="confirmationMotDePasse" name="confirmationMotDePasse" minlength="8" required>
     </div>
     <button type="submit" class="btn">S'inscrire</button>
-    <p style="margin-top: 1rem;">Déjà inscrit ? <a href="login.php">Se connecter</a></p>
+    <p class="form-footnote">Déjà inscrit ? <a href="login.php">Se connecter</a></p>
 </form>
 
 <?php include 'footer.php'; ?>
