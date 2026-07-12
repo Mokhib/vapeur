@@ -4,40 +4,127 @@
 
 // --- Jeux ------------------------------------------------------------------
 
-// Renvoie la liste des jeux, avec recherche textuelle et tri optionnels.
-function obtenirJeux(PDO $pdo, string $recherche = '', string $tri = 'recent'): array
+// Renvoie la liste des jeux, avec recherche, tri et filtres (année, support, éditeur) optionnels.
+// Chaque jeu porte sa note moyenne (note_moyenne) et son nombre d'avis (nombre_avis).
+function obtenirJeux(PDO $pdo, string $recherche = '', string $tri = 'recent', ?int $anneeMin = null, ?int $anneeMax = null, array $supports = array(), array $editeurs = array()): array
 {
-    $sql = 'SELECT id_game, title, description, release_year, developer, cover_image FROM games';
-    $parametres = [];
+    $sql = 'SELECT g.id_game, g.title, g.description, g.release_year, g.developer, g.support, g.cover_image,
+                   AVG(r.rating) AS note_moyenne, COUNT(r.id_review) AS nombre_avis
+            FROM games g
+            LEFT JOIN reviews r ON r.id_game = g.id_game';
+    $parametres = array();
+    $conditions = array();
 
     if ($recherche !== '') {
-        $sql .= ' WHERE title LIKE :recherche OR developer LIKE :recherche';
+        $conditions[] = '(g.title LIKE :recherche OR g.developer LIKE :recherche)';
         $parametres['recherche'] = '%' . $recherche . '%';
     }
 
+    if ($anneeMin !== null) {
+        $conditions[] = 'g.release_year >= :anneeMin';
+        $parametres['anneeMin'] = $anneeMin;
+    }
+
+    if ($anneeMax !== null) {
+        $conditions[] = 'g.release_year <= :anneeMax';
+        $parametres['anneeMax'] = $anneeMax;
+    }
+
+    if (count($supports) > 0) {
+        $sousCondition = '';
+        $i = 0;
+        foreach ($supports as $support) {
+            if ($i > 0) {
+                $sousCondition .= ' OR ';
+            }
+            $cle = 'support' . $i;
+            $sousCondition .= 'g.support LIKE :' . $cle;
+            $parametres[$cle] = '%' . $support . '%';
+            $i++;
+        }
+        $conditions[] = '(' . $sousCondition . ')';
+    }
+
+    if (count($editeurs) > 0) {
+        $sousCondition = '';
+        $i = 0;
+        foreach ($editeurs as $editeur) {
+            if ($i > 0) {
+                $sousCondition .= ' OR ';
+            }
+            $cle = 'editeur' . $i;
+            $sousCondition .= 'g.developer = :' . $cle;
+            $parametres[$cle] = $editeur;
+            $i++;
+        }
+        $conditions[] = '(' . $sousCondition . ')';
+    }
+
+    for ($i = 0; $i < count($conditions); $i++) {
+        $sql .= ($i === 0 ? ' WHERE ' : ' AND ') . $conditions[$i];
+    }
+
+    $sql .= ' GROUP BY g.id_game';
+
     switch ($tri) {
         case 'titre':
-            $sql .= ' ORDER BY title ASC';
+            $sql .= ' ORDER BY g.title ASC';
             break;
         case 'ancien':
-            $sql .= ' ORDER BY release_year ASC';
+            $sql .= ' ORDER BY g.release_year ASC';
             break;
         case 'recent':
         default:
-            $sql .= ' ORDER BY release_year DESC';
+            $sql .= ' ORDER BY g.release_year DESC';
             break;
     }
 
     $requete = $pdo->prepare($sql);
     $requete->execute($parametres);
-    return $requete->fetchAll();
+
+    $jeux = array();
+    while ($ligne = $requete->fetch()) {
+        $jeux[] = $ligne;
+    }
+    return $jeux;
 }
 
-// Renvoie un jeu précis à partir de son identifiant, ou false s'il n'existe pas.
+// Renvoie l'année de sortie la plus ancienne et la plus récente du catalogue (bornes du filtre).
+function obtenirAnneesExtremes(PDO $pdo): array
+{
+    $requete = $pdo->query('SELECT MIN(release_year) AS anneeMin, MAX(release_year) AS anneeMax FROM games');
+    return $requete->fetch();
+}
+
+// Liste fixe des supports proposés dans le filtre.
+function listeSupports(): array
+{
+    return array('PC', 'Console', 'Mobile');
+}
+
+// Renvoie la liste des éditeurs distincts présents dans le catalogue, pour le filtre.
+function obtenirEditeursDistincts(PDO $pdo): array
+{
+    $requete = $pdo->query('SELECT DISTINCT developer FROM games ORDER BY developer ASC');
+
+    $editeurs = array();
+    while ($ligne = $requete->fetch()) {
+        $editeurs[] = $ligne['developer'];
+    }
+    return $editeurs;
+}
+
+// Renvoie un jeu précis à partir de son identifiant, avec sa note moyenne, ou false s'il n'existe pas.
 function obtenirJeuParId(PDO $pdo, int $idJeu)
 {
-    $requete = $pdo->prepare('SELECT * FROM games WHERE id_game = :idJeu');
-    $requete->execute(['idJeu' => $idJeu]);
+    $requete = $pdo->prepare(
+        'SELECT g.*, AVG(r.rating) AS note_moyenne, COUNT(r.id_review) AS nombre_avis
+         FROM games g
+         LEFT JOIN reviews r ON r.id_game = g.id_game
+         WHERE g.id_game = :idJeu
+         GROUP BY g.id_game'
+    );
+    $requete->execute(array('idJeu' => $idJeu));
     return $requete->fetch();
 }
 
@@ -48,13 +135,13 @@ function ajouterJeu(PDO $pdo, string $titre, string $description, int $anneeSort
         'INSERT INTO games (title, description, release_year, developer, cover_image)
          VALUES (:titre, :description, :anneeSortie, :developpeur, :jaquette)'
     );
-    return $requete->execute([
+    return $requete->execute(array(
         'titre' => $titre,
         'description' => $description,
         'anneeSortie' => $anneeSortie,
         'developpeur' => $developpeur,
         'jaquette' => $jaquette,
-    ]);
+    ));
 }
 
 // Modifie un jeu existant. Si aucune nouvelle jaquette n'est fournie, l'ancienne est conservée.
@@ -65,34 +152,34 @@ function modifierJeu(PDO $pdo, int $idJeu, string $titre, string $description, i
             'UPDATE games SET title = :titre, description = :description, release_year = :anneeSortie,
              developer = :developpeur, cover_image = :jaquette WHERE id_game = :idJeu'
         );
-        return $requete->execute([
+        return $requete->execute(array(
             'titre' => $titre,
             'description' => $description,
             'anneeSortie' => $anneeSortie,
             'developpeur' => $developpeur,
             'jaquette' => $nouvelleJaquette,
             'idJeu' => $idJeu,
-        ]);
+        ));
     }
 
     $requete = $pdo->prepare(
         'UPDATE games SET title = :titre, description = :description, release_year = :anneeSortie,
          developer = :developpeur WHERE id_game = :idJeu'
     );
-    return $requete->execute([
+    return $requete->execute(array(
         'titre' => $titre,
         'description' => $description,
         'anneeSortie' => $anneeSortie,
         'developpeur' => $developpeur,
         'idJeu' => $idJeu,
-    ]);
+    ));
 }
 
 // Supprime un jeu (et ses avis, via ON DELETE CASCADE) du catalogue.
 function supprimerJeu(PDO $pdo, int $idJeu): bool
 {
     $requete = $pdo->prepare('DELETE FROM games WHERE id_game = :idJeu');
-    return $requete->execute(['idJeu' => $idJeu]);
+    return $requete->execute(array('idJeu' => $idJeu));
 }
 
 // Vérifie que les champs obligatoires d'un jeu sont correctement renseignés.
@@ -110,14 +197,15 @@ function traiterJaquette(?array $fichier): ?string
     }
 
     $infos = pathinfo($fichier['name']);
-    $extension = strtolower($infos['extension'] ?? '');
-    $extensionsAutorisees = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $extension = isset($infos['extension']) ? strtolower($infos['extension']) : '';
+    $extensionsAutorisees = array('jpg', 'jpeg', 'png', 'gif', 'webp');
 
     if (!in_array($extension, $extensionsAutorisees, true) || $fichier['size'] > 2000000) {
         return null;
     }
 
-    $nomFichier = uniqid('jeu_') . '.' . $extension;
+    // Préfixe horodaté pour éviter d'écraser un fichier existant portant le même nom.
+    $nomFichier = date('YmdHis') . '_' . basename($fichier['name']);
     return move_uploaded_file($fichier['tmp_name'], 'images/' . $nomFichier) ? $nomFichier : null;
 }
 
@@ -133,8 +221,23 @@ function obtenirAvisJeu(PDO $pdo, int $idJeu): array
          WHERE r.id_game = :idJeu
          ORDER BY r.created_at DESC'
     );
-    $requete->execute(['idJeu' => $idJeu]);
-    return $requete->fetchAll();
+    $requete->execute(array('idJeu' => $idJeu));
+
+    $avis = array();
+    while ($ligne = $requete->fetch()) {
+        $avis[] = $ligne;
+    }
+    return $avis;
+}
+
+// Génère une représentation textuelle d'une note sous forme d'étoiles pleines et vides.
+function genererEtoiles(int $note): string
+{
+    $etoiles = '';
+    for ($i = 1; $i <= 5; $i++) {
+        $etoiles .= ($i <= $note) ? '★' : '☆';
+    }
+    return $etoiles;
 }
 
 // Enregistre un nouvel avis (note + commentaire) sur un jeu.
@@ -144,12 +247,12 @@ function ajouterAvis(PDO $pdo, int $idUtilisateur, int $idJeu, int $note, string
         'INSERT INTO reviews (id_user, id_game, rating, comment)
          VALUES (:idUtilisateur, :idJeu, :note, :commentaire)'
     );
-    return $requete->execute([
+    return $requete->execute(array(
         'idUtilisateur' => $idUtilisateur,
         'idJeu' => $idJeu,
         'note' => $note,
         'commentaire' => $commentaire,
-    ]);
+    ));
 }
 
 // Valide puis enregistre un avis ; renvoie true si l'avis a bien été publié.
@@ -167,7 +270,7 @@ function publierAvis(PDO $pdo, int $idUtilisateur, int $idJeu, int $note, string
 function trouverUtilisateur(PDO $pdo, string $pseudo)
 {
     $requete = $pdo->prepare('SELECT * FROM users WHERE username = :pseudo');
-    $requete->execute(['pseudo' => $pseudo]);
+    $requete->execute(array('pseudo' => $pseudo));
     return $requete->fetch();
 }
 
@@ -175,7 +278,7 @@ function trouverUtilisateur(PDO $pdo, string $pseudo)
 function utilisateurExiste(PDO $pdo, string $pseudo, string $email): bool
 {
     $requete = $pdo->prepare('SELECT id_user FROM users WHERE username = :pseudo OR email = :email');
-    $requete->execute(['pseudo' => $pseudo, 'email' => $email]);
+    $requete->execute(array('pseudo' => $pseudo, 'email' => $email));
     return $requete->fetch() !== false;
 }
 
@@ -183,38 +286,43 @@ function utilisateurExiste(PDO $pdo, string $pseudo, string $email): bool
 function creerUtilisateur(PDO $pdo, string $pseudo, string $email, string $motDePasse): bool
 {
     $requete = $pdo->prepare('INSERT INTO users (username, email, password) VALUES (:pseudo, :email, :motDePasse)');
-    return $requete->execute(['pseudo' => $pseudo, 'email' => $email, 'motDePasse' => $motDePasse]);
+    return $requete->execute(array('pseudo' => $pseudo, 'email' => $email, 'motDePasse' => $motDePasse));
 }
 
 // Met à jour le mot de passe d'un utilisateur.
 function modifierMotDePasse(PDO $pdo, int $idUtilisateur, string $nouveauMotDePasse): bool
 {
     $requete = $pdo->prepare('UPDATE users SET password = :motDePasse WHERE id_user = :idUtilisateur');
-    return $requete->execute(['motDePasse' => $nouveauMotDePasse, 'idUtilisateur' => $idUtilisateur]);
+    return $requete->execute(array('motDePasse' => $nouveauMotDePasse, 'idUtilisateur' => $idUtilisateur));
 }
 
 // Liste tous les utilisateurs pour le panel administrateur.
 function obtenirUtilisateurs(PDO $pdo): array
 {
     $requete = $pdo->query('SELECT id_user, username, email, role, created_at FROM users ORDER BY created_at DESC');
-    return $requete->fetchAll();
+
+    $utilisateurs = array();
+    while ($ligne = $requete->fetch()) {
+        $utilisateurs[] = $ligne;
+    }
+    return $utilisateurs;
 }
 
 // Transforme un compte utilisateur en administrateur ou inversement.
 function modifierRole(PDO $pdo, int $idUtilisateur, string $role): bool
 {
-    if (!in_array($role, ['user', 'admin'], true)) {
+    if (!in_array($role, array('user', 'admin'), true)) {
         return false;
     }
     $requete = $pdo->prepare('UPDATE users SET role = :role WHERE id_user = :idUtilisateur');
-    return $requete->execute(['role' => $role, 'idUtilisateur' => $idUtilisateur]);
+    return $requete->execute(array('role' => $role, 'idUtilisateur' => $idUtilisateur));
 }
 
 // Supprime définitivement un compte utilisateur ou administrateur.
 function supprimerUtilisateur(PDO $pdo, int $idUtilisateur): bool
 {
     $requete = $pdo->prepare('DELETE FROM users WHERE id_user = :idUtilisateur');
-    return $requete->execute(['idUtilisateur' => $idUtilisateur]);
+    return $requete->execute(array('idUtilisateur' => $idUtilisateur));
 }
 
 // --- Authentification et inscription --------------------------------------------

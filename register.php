@@ -7,7 +7,7 @@ redirigerSiConnecte();
 $erreur = '';
 $succes = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (isset($_POST['pseudo'])) {
     $pseudo = trim($_POST['pseudo']);
     $email = trim($_POST['email']);
     $motDePasse = $_POST['motDePasse'];
@@ -28,12 +28,12 @@ include 'header.php';
 
 <h1>Inscription</h1>
 
-<?php if ($erreur): ?>
+<?php if ($erreur) { ?>
     <div class="alert error"><?= htmlspecialchars($erreur) ?></div>
-<?php endif; ?>
-<?php if ($succes): ?>
+<?php } ?>
+<?php if ($succes) { ?>
     <div class="alert success"><?= htmlspecialchars($succes) ?></div>
-<?php endif; ?>
+<?php } ?>
 
 <form method="POST" action="register.php">
     <div class="form-group">
