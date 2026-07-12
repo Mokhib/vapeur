@@ -8,7 +8,6 @@ document.addEventListener('submit', function (event) {
 });
 
 // Double curseur du filtre "Année de sortie", synchronisé avec deux champs numériques
-// (le curseur seul ne montre pas assez clairement l'année choisie tant qu'on ne l'a pas relâché).
 var champAnneeMin = document.getElementById('anneeMin');
 var champAnneeMax = document.getElementById('anneeMax');
 var texteAnneeMin = document.getElementById('anneeMinTexte');

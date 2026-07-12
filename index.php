@@ -97,12 +97,12 @@ include 'header.php';
             <?php if (count($jeux) > 0) { ?>
                 <?php foreach ($jeux as $jeu) { ?>
                     <div class="game-card">
-                        <?php if (!empty($jeu['cover_image']) && file_exists('images/' . $jeu['cover_image'])) { ?>
+                        <?php if (!empty($jeu['cover_image']) && file_exists(DOSSIER_SITE . '/images/' . $jeu['cover_image'])) { ?>
                             <img src="images/<?= htmlspecialchars($jeu['cover_image']) ?>" alt="Jaquette du jeu <?= htmlspecialchars($jeu['title']) ?>" class="game-cover">
                         <?php } else { ?>
                             <div class="game-cover game-cover--placeholder" aria-hidden="true"><?= htmlspecialchars($jeu['title']) ?></div>
                         <?php } ?>
-                        <h3><?= htmlspecialchars($jeu['title']) ?> (<?= htmlspecialchars($jeu['release_year']) ?>)</h3>
+                        <h2><?= htmlspecialchars($jeu['title']) ?> (<?= htmlspecialchars($jeu['release_year']) ?>)</h2>
                         <?php if ($jeu['nombre_avis'] > 0) { ?>
                             <p class="rating-summary">
                                 <span class="rating"><?= genererEtoiles((int)round($jeu['note_moyenne'])) ?></span>
