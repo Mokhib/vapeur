@@ -10,16 +10,17 @@ $messageJeu = '';
 // Jeu en cours de modification, si l'admin a cliqué sur « Modifier » dans le catalogue
 $jeuEnEdition = null;
 if (isset($_GET['editerJeu']) && is_numeric($_GET['editerJeu'])) {
-    $jeuEnEdition = obtenirJeuParId($pdo, (int)$_GET['editerJeu']) ?: null;
+    $jeuTrouve = obtenirJeuParId($pdo, (int)$_GET['editerJeu']);
+    $jeuEnEdition = $jeuTrouve ? $jeuTrouve : null;
 }
 
 // --- Actions sur les comptes utilisateurs (promouvoir / rétrograder / supprimer) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actionUtilisateur'])) {
+if (isset($_POST['actionUtilisateur'])) {
     $messageUtilisateur = traiterActionUtilisateur($pdo, (int)$_SESSION['id_user'], $_POST['actionUtilisateur'], (int)$_POST['idUtilisateur']);
 }
 
 // --- Ajout d'un jeu au catalogue, avec jaquette optionnelle ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouterJeu'])) {
+if (isset($_POST['ajouterJeu'])) {
     $titre = trim($_POST['titre']);
     $description = trim($_POST['description']);
     $anneeSortie = (int)$_POST['anneeSortie'];
@@ -28,7 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouterJeu'])) {
     if (!validerJeu($titre, $description, $developpeur, $anneeSortie)) {
         $messageJeu = 'Merci de remplir correctement tous les champs du jeu.';
     } else {
-        $jaquette = traiterJaquette($_FILES['jaquette'] ?? null);
+        $fichierEnvoye = isset($_FILES['jaquette']) ? $_FILES['jaquette'] : null;
+        $jaquette = traiterJaquette($fichierEnvoye);
         if (ajouterJeu($pdo, $titre, $description, $anneeSortie, $developpeur, $jaquette)) {
             $messageJeu = 'Jeu ajouté au catalogue.';
         } else {
@@ -38,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouterJeu'])) {
 }
 
 // --- Modification d'un jeu existant ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifierJeu'])) {
+if (isset($_POST['modifierJeu'])) {
     $idJeu = (int)$_POST['idJeu'];
     $titre = trim($_POST['titre']);
     $description = trim($_POST['description']);
@@ -47,26 +49,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifierJeu'])) {
 
     if (!validerJeu($titre, $description, $developpeur, $anneeSortie)) {
         $messageJeu = 'Merci de remplir correctement tous les champs du jeu.';
-        $jeuEnEdition = obtenirJeuParId($pdo, $idJeu) ?: null;
+        $jeuTrouve = obtenirJeuParId($pdo, $idJeu);
+        $jeuEnEdition = $jeuTrouve ? $jeuTrouve : null;
     } else {
-        $nouvelleJaquette = traiterJaquette($_FILES['jaquette'] ?? null);
+        $fichierEnvoye = isset($_FILES['jaquette']) ? $_FILES['jaquette'] : null;
+        $nouvelleJaquette = traiterJaquette($fichierEnvoye);
         if (modifierJeu($pdo, $idJeu, $titre, $description, $anneeSortie, $developpeur, $nouvelleJaquette)) {
             $messageJeu = 'Jeu modifié.';
         } else {
             $messageJeu = "Erreur lors de la modification du jeu.";
-            $jeuEnEdition = obtenirJeuParId($pdo, $idJeu) ?: null;
+            $jeuTrouve = obtenirJeuParId($pdo, $idJeu);
+            $jeuEnEdition = $jeuTrouve ? $jeuTrouve : null;
         }
     }
 }
 
 // --- Suppression d'un jeu ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimerJeu'])) {
+if (isset($_POST['supprimerJeu'])) {
     supprimerJeu($pdo, (int)$_POST['idJeu']);
     $messageJeu = 'Jeu supprimé du catalogue.';
 }
 
 $utilisateurs = obtenirUtilisateurs($pdo);
 $jeux = obtenirJeux($pdo);
+
+// Valeurs pré-remplies du formulaire (vides si aucun jeu n'est en cours de modification)
+$titreForm = isset($jeuEnEdition['title']) ? $jeuEnEdition['title'] : '';
+$developpeurForm = isset($jeuEnEdition['developer']) ? $jeuEnEdition['developer'] : '';
+$anneeSortieForm = isset($jeuEnEdition['release_year']) ? $jeuEnEdition['release_year'] : '';
+$descriptionForm = isset($jeuEnEdition['description']) ? $jeuEnEdition['description'] : '';
 
 $titrePage = SITE_NAME . ' - Administration';
 include 'header.php';
@@ -77,7 +88,7 @@ include 'header.php';
 
 <section class="admin-section">
     <h2>Comptes utilisateurs</h2>
-    <?php if ($messageUtilisateur): ?><div class="alert"><?= htmlspecialchars($messageUtilisateur) ?></div><?php endif; ?>
+    <?php if ($messageUtilisateur) { ?><div class="alert"><?= htmlspecialchars($messageUtilisateur) ?></div><?php } ?>
 
     <div class="table-wrap">
         <table class="admin-table">
@@ -91,38 +102,38 @@ include 'header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($utilisateurs as $utilisateur): ?>
+                <?php foreach ($utilisateurs as $utilisateur) { ?>
                     <tr>
                         <td><?= htmlspecialchars($utilisateur['username']) ?></td>
                         <td><?= htmlspecialchars($utilisateur['email']) ?></td>
                         <td><span class="badge badge-<?= htmlspecialchars($utilisateur['role']) ?>"><?= htmlspecialchars($utilisateur['role']) ?></span></td>
                         <td><?= date('d/m/Y', strtotime($utilisateur['created_at'])) ?></td>
                         <td class="admin-actions">
-                            <?php if ((int)$utilisateur['id_user'] !== (int)$_SESSION['id_user']): ?>
-                                <?php if ($utilisateur['role'] === 'user'): ?>
+                            <?php if ((int)$utilisateur['id_user'] !== (int)$_SESSION['id_user']) { ?>
+                                <?php if ($utilisateur['role'] === 'user') { ?>
                                     <form method="POST" action="admin.php">
                                         <input type="hidden" name="idUtilisateur" value="<?= (int)$utilisateur['id_user'] ?>">
                                         <input type="hidden" name="actionUtilisateur" value="promouvoir">
                                         <button type="submit" class="btn btn-small">Promouvoir admin</button>
                                     </form>
-                                <?php else: ?>
+                                <?php } else { ?>
                                     <form method="POST" action="admin.php">
                                         <input type="hidden" name="idUtilisateur" value="<?= (int)$utilisateur['id_user'] ?>">
                                         <input type="hidden" name="actionUtilisateur" value="retrograder">
                                         <button type="submit" class="btn btn-small">Rétrograder</button>
                                     </form>
-                                <?php endif; ?>
+                                <?php } ?>
                                 <form method="POST" action="admin.php" data-confirm="Supprimer définitivement ce compte ?">
                                     <input type="hidden" name="idUtilisateur" value="<?= (int)$utilisateur['id_user'] ?>">
                                     <input type="hidden" name="actionUtilisateur" value="supprimer">
                                     <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
                                 </form>
-                            <?php else: ?>
+                            <?php } else { ?>
                                 <span class="muted">Votre compte</span>
-                            <?php endif; ?>
+                            <?php } ?>
                         </td>
                     </tr>
-                <?php endforeach; ?>
+                <?php } ?>
             </tbody>
         </table>
     </div>
@@ -130,37 +141,37 @@ include 'header.php';
 
 <section class="admin-section">
     <h2><?= $jeuEnEdition ? 'Modifier un jeu' : 'Ajouter un jeu' ?></h2>
-    <?php if ($messageJeu): ?><div class="alert"><?= htmlspecialchars($messageJeu) ?></div><?php endif; ?>
+    <?php if ($messageJeu) { ?><div class="alert"><?= htmlspecialchars($messageJeu) ?></div><?php } ?>
     <form method="POST" action="admin.php" enctype="multipart/form-data">
-        <?php if ($jeuEnEdition): ?>
+        <?php if ($jeuEnEdition) { ?>
             <input type="hidden" name="idJeu" value="<?= (int)$jeuEnEdition['id_game'] ?>">
-        <?php endif; ?>
+        <?php } ?>
         <div class="form-group">
             <label for="titre">Titre</label>
-            <input type="text" id="titre" name="titre" value="<?= htmlspecialchars($jeuEnEdition['title'] ?? '') ?>" required>
+            <input type="text" id="titre" name="titre" value="<?= htmlspecialchars($titreForm) ?>" required>
         </div>
         <div class="form-group">
             <label for="developpeur">Studio</label>
-            <input type="text" id="developpeur" name="developpeur" value="<?= htmlspecialchars($jeuEnEdition['developer'] ?? '') ?>" required>
+            <input type="text" id="developpeur" name="developpeur" value="<?= htmlspecialchars($developpeurForm) ?>" required>
         </div>
         <div class="form-group">
             <label for="anneeSortie">Année de sortie</label>
-            <input type="number" id="anneeSortie" name="anneeSortie" min="1970" max="2100" value="<?= htmlspecialchars($jeuEnEdition['release_year'] ?? '') ?>" required>
+            <input type="number" id="anneeSortie" name="anneeSortie" min="1970" max="2100" value="<?= htmlspecialchars($anneeSortieForm) ?>" required>
         </div>
         <div class="form-group">
             <label for="description">Description</label>
-            <textarea id="description" name="description" required><?= htmlspecialchars($jeuEnEdition['description'] ?? '') ?></textarea>
+            <textarea id="description" name="description" required><?= htmlspecialchars($descriptionForm) ?></textarea>
         </div>
         <div class="form-group">
             <label for="jaquette">Jaquette (jpg, png, gif ou webp, 2 Mo max)<?= $jeuEnEdition ? ' — laisser vide pour conserver l\'actuelle' : '' ?></label>
             <input type="file" id="jaquette" name="jaquette" accept="image/png, image/jpeg, image/gif, image/webp">
         </div>
-        <?php if ($jeuEnEdition): ?>
+        <?php if ($jeuEnEdition) { ?>
             <button type="submit" name="modifierJeu" value="1" class="btn">Enregistrer les modifications</button>
             <a href="admin.php" class="btn btn-secondary">Annuler</a>
-        <?php else: ?>
+        <?php } else { ?>
             <button type="submit" name="ajouterJeu" value="1" class="btn">Ajouter le jeu</button>
-        <?php endif; ?>
+        <?php } ?>
     </form>
 </section>
 
@@ -170,7 +181,7 @@ include 'header.php';
         <table class="admin-table">
             <thead><tr><th>Titre</th><th>Année</th><th>Studio</th><th>Actions</th></tr></thead>
             <tbody>
-                <?php foreach ($jeux as $jeu): ?>
+                <?php foreach ($jeux as $jeu) { ?>
                     <tr>
                         <td><?= htmlspecialchars($jeu['title']) ?></td>
                         <td><?= htmlspecialchars($jeu['release_year']) ?></td>
@@ -183,7 +194,7 @@ include 'header.php';
                             </form>
                         </td>
                     </tr>
-                <?php endforeach; ?>
+                <?php } ?>
             </tbody>
         </table>
     </div>

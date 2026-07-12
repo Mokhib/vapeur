@@ -1,10 +1,8 @@
 <?php
 // Paramétrage global du site : session, constantes et connexion à la base de données.
 
-// Démarrage de la session si elle n'est pas déjà active
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Démarrage de la session
+session_start();
 
 // Paramètres de connexion à la base de données (compte local par défaut : root, mot de passe vide)
 define('DB_HOST', 'localhost');

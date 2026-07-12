@@ -1,0 +1,26 @@
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t2 d2">
+  <title id="t2">Day of the Tentacle</title>
+  <desc id="d2">Jaquette illustrative : fond graphite degrade avec spirale temporelle abstraite couleur cyan-vapeur.</desc>
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#14171a"/>
+      <stop offset="100%" stop-color="#232a2e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="400" fill="url(#bg2)"/>
+
+  <g fill="none" stroke="#5fd4c4" stroke-width="3">
+    <circle cx="300" cy="150" r="30" opacity="0.9"/>
+    <circle cx="300" cy="150" r="55" opacity="0.65"/>
+    <circle cx="300" cy="150" r="80" opacity="0.45"/>
+    <circle cx="300" cy="150" r="105" opacity="0.28"/>
+    <circle cx="300" cy="150" r="130" opacity="0.14"/>
+  </g>
+  <path d="M300,150 C340,120 380,140 300,150 C220,160 260,180 300,150" fill="#5fd4c4" opacity="0.85"/>
+  <circle cx="300" cy="150" r="10" fill="#e4e9ea"/>
+
+  <text x="300" y="300" text-anchor="middle" font-family="'Cascadia Code', Consolas, monospace" font-size="30" fill="#e4e9ea" font-weight="700" letter-spacing="1">DAY OF THE</text>
+  <text x="300" y="338" text-anchor="middle" font-family="'Cascadia Code', Consolas, monospace" font-size="30" fill="#e4e9ea" font-weight="700" letter-spacing="1">TENTACLE</text>
+  <text x="300" y="362" text-anchor="middle" font-family="'Cascadia Code', Consolas, monospace" font-size="14" fill="#5fd4c4" letter-spacing="2">1993</text>
+</svg>

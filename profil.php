@@ -7,7 +7,7 @@ exigerConnexion();
 $erreur = '';
 $succes = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (isset($_POST['motDePasseActuel'])) {
     $motDePasseActuel = $_POST['motDePasseActuel'];
     $nouveauMotDePasse = $_POST['nouveauMotDePasse'];
     $confirmationNouveauMotDePasse = $_POST['confirmationNouveauMotDePasse'];
@@ -47,12 +47,12 @@ include 'header.php';
 <section class="profile-section">
     <h2>Changer mon mot de passe</h2>
 
-    <?php if ($erreur): ?>
+    <?php if ($erreur) { ?>
         <div class="alert error"><?= htmlspecialchars($erreur) ?></div>
-    <?php endif; ?>
-    <?php if ($succes): ?>
+    <?php } ?>
+    <?php if ($succes) { ?>
         <div class="alert success"><?= htmlspecialchars($succes) ?></div>
-    <?php endif; ?>
+    <?php } ?>
 
     <form method="POST" action="profil.php">
         <div class="form-group">

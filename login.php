@@ -6,7 +6,7 @@ redirigerSiConnecte();
 
 $erreur = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (isset($_POST['pseudo'])) {
     $pseudo = trim($_POST['pseudo']);
     $motDePasse = $_POST['motDePasse'];
 
@@ -28,9 +28,9 @@ include 'header.php';
 
 <h1>Connexion</h1>
 
-<?php if ($erreur): ?>
+<?php if ($erreur) { ?>
     <div class="alert error"><?= htmlspecialchars($erreur) ?></div>
-<?php endif; ?>
+<?php } ?>
 
 <form method="POST" action="login.php">
     <div class="form-group">

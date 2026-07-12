@@ -19,7 +19,7 @@ if (!$jeu) {
 $erreurAvis = '';
 $succesAvis = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['id_user'])) {
+if (isset($_POST['commentaire']) && isset($_SESSION['id_user'])) {
     $note = (int)$_POST['note'];
     $commentaire = trim($_POST['commentaire']);
 
@@ -40,25 +40,35 @@ include 'header.php';
 <h1><?= htmlspecialchars($jeu['title']) ?> (<?= htmlspecialchars($jeu['release_year']) ?>)</h1>
 <p><strong>Développeur :</strong> <?= htmlspecialchars($jeu['developer']) ?></p>
 
-<?php if (!empty($jeu['cover_image']) && file_exists('images/' . $jeu['cover_image'])): ?>
-    <img src="images/<?= htmlspecialchars($jeu['cover_image']) ?>" alt="Jaquette du jeu <?= htmlspecialchars($jeu['title']) ?>" class="game-cover game-cover--detail">
-<?php endif; ?>
+<?php if ($jeu['nombre_avis'] > 0) { ?>
+    <p class="rating-summary rating-summary--large">
+        <span class="rating"><?= genererEtoiles((int)round($jeu['note_moyenne'])) ?></span>
+        <span class="rating-value"><?= round((float)$jeu['note_moyenne'], 1) ?>/5</span>
+        <span class="rating-count">(<?= (int)$jeu['nombre_avis'] ?> avis)</span>
+    </p>
+<?php } else { ?>
+    <p class="rating-summary rating-summary--empty">Pas encore noté</p>
+<?php } ?>
 
-<p><strong>Description :</strong> <?= nl2br(htmlspecialchars($jeu['description'])) ?></p>
+<?php if (!empty($jeu['cover_image']) && file_exists('images/' . $jeu['cover_image'])) { ?>
+    <img src="images/<?= htmlspecialchars($jeu['cover_image']) ?>" alt="Jaquette du jeu <?= htmlspecialchars($jeu['title']) ?>" class="game-cover game-cover--detail">
+<?php } ?>
+
+<p><strong>Description :</strong> <?= str_replace("\n", '<br>', htmlspecialchars($jeu['description'])) ?></p>
 
 <hr class="section-divider">
 
 <div class="reviews-section">
     <h2>Avis de la communauté</h2>
 
-    <?php if ($erreurAvis): ?>
+    <?php if ($erreurAvis) { ?>
         <div class="alert error"><?= htmlspecialchars($erreurAvis) ?></div>
-    <?php endif; ?>
-    <?php if ($succesAvis): ?>
+    <?php } ?>
+    <?php if ($succesAvis) { ?>
         <div class="alert success"><?= htmlspecialchars($succesAvis) ?></div>
-    <?php endif; ?>
+    <?php } ?>
 
-    <?php if (isset($_SESSION['id_user'])): ?>
+    <?php if (isset($_SESSION['id_user'])) { ?>
         <form method="POST" action="" class="review-form">
             <h3>Laissez votre avis</h3>
             <div class="form-group">
@@ -71,25 +81,25 @@ include 'header.php';
             </div>
             <button type="submit" class="btn">Publier</button>
         </form>
-    <?php else: ?>
+    <?php } else { ?>
         <p><a href="login.php">Connectez-vous</a> pour laisser un avis.</p>
-    <?php endif; ?>
+    <?php } ?>
 
     <div class="reviews-list">
-        <?php if (count($listeAvis) > 0): ?>
-            <?php foreach ($listeAvis as $avis): ?>
+        <?php if (count($listeAvis) > 0) { ?>
+            <?php foreach ($listeAvis as $avis) { ?>
                 <div class="review-card">
                     <div class="review-header">
                         <strong><?= htmlspecialchars($avis['username']) ?></strong>
-                        <span class="rating"><?= str_repeat('★', $avis['rating']) ?><?= str_repeat('☆', 5 - $avis['rating']) ?></span>
+                        <span class="rating"><?= genererEtoiles($avis['rating']) ?></span>
                         <span><?= date('d/m/Y', strtotime($avis['created_at'])) ?></span>
                     </div>
-                    <p><?= nl2br(htmlspecialchars($avis['comment'])) ?></p>
+                    <p><?= str_replace("\n", '<br>', htmlspecialchars($avis['comment'])) ?></p>
                 </div>
-            <?php endforeach; ?>
-        <?php else: ?>
+            <?php } ?>
+        <?php } else { ?>
             <p>Aucun avis pour ce jeu pour le moment.</p>
-        <?php endif; ?>
+        <?php } ?>
     </div>
 </div>
 
