@@ -217,4 +217,38 @@ INSERT INTO `reviews` (`id_review`, `id_user`, `id_game`, `rating`, `comment`, `
 (96, 3, 30, 5, 'Un scénario qui prend son temps mais qui paie chaque rebondissement.', '2025-12-18 09:16:00'),
 (97, 7, 30, 2, 'Trop daté à mon goût, ça n\'a pas bien vieilli comparé à d\'autres classiques du genre.', '2025-10-18 15:31:00');
 
+USE `clickvault`;
+
+UPDATE `games` SET `cover_image` = 'The Secret of Monkey Island.jpg' WHERE `id_game` = 1;
+UPDATE `games` SET `cover_image` = 'Day of the Tentacle.jpg' WHERE `id_game` = 2;
+UPDATE `games` SET `cover_image` = 'Monkey Island 2: LeChuck\'s Revenge.jpg' WHERE `id_game` = 3;
+UPDATE `games` SET `cover_image` = 'The Curse of Monkey Island.jpg' WHERE `id_game` = 4;
+UPDATE `games` SET `cover_image` = 'Escape from Monkey Island.jpg' WHERE `id_game` = 5;
+UPDATE `games` SET `cover_image` = 'Return to Monkey Island.jpg' WHERE `id_game` = 6;
+UPDATE `games` SET `cover_image` = 'Full Throttle.jpg' WHERE `id_game` = 7;
+UPDATE `games` SET `cover_image` = 'Grim Fandango.jpg' WHERE `id_game` = 8;
+UPDATE `games` SET `cover_image` = 'Sam & Max Hit the Road.jpg' WHERE `id_game` = 9;
+UPDATE `games` SET `cover_image` = 'Loom.jpg' WHERE `id_game` = 10;
+UPDATE `games` SET `cover_image` = 'Indiana Jones and the Fate of Atlantis.jpg' WHERE `id_game` = 11;
+UPDATE `games` SET `cover_image` = 'Broken Sword: The Shadow of the Templars.jpg' WHERE `id_game` = 12;
+UPDATE `games` SET `cover_image` = 'Broken Sword II: The Smoking Mirror.jpg' WHERE `id_game` = 13;
+UPDATE `games` SET `cover_image` = 'Beneath a Steel Sky.jpg' WHERE `id_game` = 14;
+UPDATE `games` SET `cover_image` = 'Gabriel Knight: Sins of the Fathers.jpg' WHERE `id_game` = 15;
+UPDATE `games` SET `cover_image` = 'King\'s Quest VI: Heir Today, Gone Tomorrow.jpg' WHERE `id_game` = 16;
+UPDATE `games` SET `cover_image` = 'Space Quest IV: Roger Wilco and the Time Rippers.jpg' WHERE `id_game` = 17;
+UPDATE `games` SET `cover_image` = 'Leisure Suit Larry in the Land of the Lounge Lizards.jpg' WHERE `id_game` = 18;
+UPDATE `games` SET `cover_image` = 'Discworld.jpg' WHERE `id_game` = 19;
+UPDATE `games` SET `cover_image` = 'The Longest Journey.jpg' WHERE `id_game` = 20;
+UPDATE `games` SET `cover_image` = 'Dreamfall: The Longest Journey.jpg' WHERE `id_game` = 21;
+UPDATE `games` SET `cover_image` = 'Machinarium.jpg' WHERE `id_game` = 22;
+UPDATE `games` SET `cover_image` = 'Botanicula.jpg' WHERE `id_game` = 23;
+UPDATE `games` SET `cover_image` = 'Samorost 3.jpg' WHERE `id_game` = 24;
+UPDATE `games` SET `cover_image` = 'The Whispered World.jpg' WHERE `id_game` = 25;
+UPDATE `games` SET `cover_image` = 'Deponia.jpg' WHERE `id_game` = 26;
+UPDATE `games` SET `cover_image` = 'Thimbleweed Park.jpg' WHERE `id_game` = 27;
+UPDATE `games` SET `cover_image` = 'Kathy Rain.jpg' WHERE `id_game` = 28;
+UPDATE `games` SET `cover_image` = 'Unavowed.jpg' WHERE `id_game` = 29;
+UPDATE `games` SET `cover_image` = 'Gemini Rue.jpg' WHERE `id_game` = 30;
+
+
 COMMIT;
