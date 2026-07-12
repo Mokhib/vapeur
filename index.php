@@ -27,6 +27,7 @@ include 'header.php';
     <aside class="filter-panel">
         <form method="GET" action="index.php" id="formulaireFiltres">
             <h2>Filtres</h2>
+            <button type="submit" class="btn filter-btn-top">Filtrer</button>
 
             <div class="filter-group">
                 <label for="recherche">Recherche</label>
