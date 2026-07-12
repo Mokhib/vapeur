@@ -71,15 +71,15 @@ ALTER TABLE `reviews`
 -- Le mot de passe correspond à 'azerty' pour tous les comptes
 INSERT INTO `users` (`id_user`, `username`, `email`, `password`, `role`, `created_at`) VALUES
 (1, 'AdminVault', 'admin@clickvault.local', 'azerty', 'admin', '2025-08-03 09:12:00'),
-(2, 'Guybrush99', 'guybrush@clickvault.local', 'azerty', 'user', '2025-08-05 19:40:00'),
-(3, 'PixelHunter77', 'pixelhunter@clickvault.local', 'azerty', 'user', '2025-08-19 21:03:00'),
-(4, 'SerialClicker', 'serialclicker@clickvault.local', 'azerty', 'user', '2025-09-02 14:27:00'),
-(5, 'GrogMaster', 'grogmaster@clickvault.local', 'azerty', 'user', '2025-09-14 22:51:00'),
-(6, 'InventoryHoarder', 'inventoryhoarder@clickvault.local', 'azerty', 'user', '2025-09-30 11:38:00'),
-(7, 'PointNClickQueen', 'pointnclickqueen@clickvault.local', 'azerty', 'user', '2025-10-11 16:59:00'),
-(8, 'CathodeRay', 'cathoderay@clickvault.local', 'azerty', 'user', '2025-10-27 20:14:00'),
-(9, 'FloppyDiskFan', 'floppydiskfan@clickvault.local', 'azerty', 'user', '2025-11-08 13:22:00'),
-(10, 'MojoRising', 'mojorising@clickvault.local', 'azerty', 'user', '2025-11-21 18:05:00');
+(2, 'prof', 'guybrush@clickvault.local', 'azerty', 'user', '2025-08-05 19:40:00'),
+(3, 'ziad', 'pixelhunter@clickvault.local', 'azerty', 'user', '2025-08-19 21:03:00'),
+(4, 'nathan', 'serialclicker@clickvault.local', 'azerty', 'user', '2025-09-02 14:27:00'),
+(5, 'hibat', 'grogmaster@clickvault.local', 'azerty', 'user', '2025-09-14 22:51:00'),
+(6, 'samy', 'inventoryhoarder@clickvault.local', 'azerty', 'user', '2025-09-30 11:38:00'),
+(7, 'bilal', 'pointnclickqueen@clickvault.local', 'azerty', 'user', '2025-10-11 16:59:00'),
+(8, 'come', 'cathoderay@clickvault.local', 'azerty', 'user', '2025-10-27 20:14:00'),
+(9, 'jacques', 'floppydiskfan@clickvault.local', 'azerty', 'user', '2025-11-08 13:22:00'),
+(10, 'elias', 'mojorising@clickvault.local', 'azerty', 'user', '2025-11-21 18:05:00');
 
 -- Catalogue de 30 jeux d'aventure point-and-click réellement disponibles sur Steam.
 -- cover_image suit une convention de nommage prévisible : déposez vos propres images
