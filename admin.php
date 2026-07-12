@@ -25,13 +25,14 @@ if (isset($_POST['ajouterJeu'])) {
     $description = trim($_POST['description']);
     $anneeSortie = (int)$_POST['anneeSortie'];
     $developpeur = trim($_POST['developpeur']);
+    $supportsChoisis = isset($_POST['support']) && is_array($_POST['support']) ? $_POST['support'] : array();
 
-    if (!validerJeu($titre, $description, $developpeur, $anneeSortie)) {
-        $messageJeu = 'Merci de remplir correctement tous les champs du jeu.';
+    if (!validerJeu($titre, $description, $developpeur, $anneeSortie) || count($supportsChoisis) === 0) {
+        $messageJeu = 'Merci de remplir correctement tous les champs du jeu, dont au moins un support.';
     } else {
         $fichierEnvoye = isset($_FILES['jaquette']) ? $_FILES['jaquette'] : null;
         $jaquette = traiterJaquette($fichierEnvoye);
-        if (ajouterJeu($pdo, $titre, $description, $anneeSortie, $developpeur, $jaquette)) {
+        if (ajouterJeu($pdo, $titre, $description, $anneeSortie, $developpeur, joindreSupports($supportsChoisis), $jaquette)) {
             $messageJeu = 'Jeu ajouté au catalogue.';
         } else {
             $messageJeu = "Erreur lors de l'ajout du jeu.";
@@ -46,15 +47,16 @@ if (isset($_POST['modifierJeu'])) {
     $description = trim($_POST['description']);
     $anneeSortie = (int)$_POST['anneeSortie'];
     $developpeur = trim($_POST['developpeur']);
+    $supportsChoisis = isset($_POST['support']) && is_array($_POST['support']) ? $_POST['support'] : array();
 
-    if (!validerJeu($titre, $description, $developpeur, $anneeSortie)) {
-        $messageJeu = 'Merci de remplir correctement tous les champs du jeu.';
+    if (!validerJeu($titre, $description, $developpeur, $anneeSortie) || count($supportsChoisis) === 0) {
+        $messageJeu = 'Merci de remplir correctement tous les champs du jeu, dont au moins un support.';
         $jeuTrouve = obtenirJeuParId($pdo, $idJeu);
         $jeuEnEdition = $jeuTrouve ? $jeuTrouve : null;
     } else {
         $fichierEnvoye = isset($_FILES['jaquette']) ? $_FILES['jaquette'] : null;
         $nouvelleJaquette = traiterJaquette($fichierEnvoye);
-        if (modifierJeu($pdo, $idJeu, $titre, $description, $anneeSortie, $developpeur, $nouvelleJaquette)) {
+        if (modifierJeu($pdo, $idJeu, $titre, $description, $anneeSortie, $developpeur, joindreSupports($supportsChoisis), $nouvelleJaquette)) {
             $messageJeu = 'Jeu modifié.';
         } else {
             $messageJeu = "Erreur lors de la modification du jeu.";
@@ -78,6 +80,7 @@ $titreForm = isset($jeuEnEdition['title']) ? $jeuEnEdition['title'] : '';
 $developpeurForm = isset($jeuEnEdition['developer']) ? $jeuEnEdition['developer'] : '';
 $anneeSortieForm = isset($jeuEnEdition['release_year']) ? $jeuEnEdition['release_year'] : '';
 $descriptionForm = isset($jeuEnEdition['description']) ? $jeuEnEdition['description'] : '';
+$supportsForm = isset($jeuEnEdition['support']) ? explode(',', $jeuEnEdition['support']) : array('PC');
 
 $titrePage = SITE_NAME . ' - Administration';
 include 'header.php';
@@ -158,6 +161,15 @@ include 'header.php';
             <label for="anneeSortie">Année de sortie</label>
             <input type="number" id="anneeSortie" name="anneeSortie" min="1970" max="2100" value="<?= htmlspecialchars($anneeSortieForm) ?>" required>
         </div>
+        <fieldset class="form-group">
+            <legend>Support</legend>
+            <?php foreach (listeSupports() as $support) { ?>
+                <label class="filter-checkbox">
+                    <input type="checkbox" name="support[]" value="<?= htmlspecialchars($support) ?>" <?= in_array($support, $supportsForm, true) ? 'checked' : '' ?>>
+                    <?= htmlspecialchars($support) ?>
+                </label>
+            <?php } ?>
+        </fieldset>
         <div class="form-group">
             <label for="description">Description</label>
             <textarea id="description" name="description" required><?= htmlspecialchars($descriptionForm) ?></textarea>

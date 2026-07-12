@@ -19,7 +19,7 @@ if (!isset($descriptionPage)) {
     <meta name="description" content="<?= htmlspecialchars($descriptionPage) ?>">
     <title><?= htmlspecialchars($titrePage) ?></title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%2314171a'/%3E%3Ccircle cx='20' cy='20' r='15' stroke='%235fd4c4' stroke-width='2.5' fill='none'/%3E%3Cg stroke='%238b969c' stroke-width='2' stroke-linecap='round'%3E%3Cline x1='20' y1='7' x2='20' y2='10'/%3E%3Cline x1='9' y1='20' x2='12' y2='20'/%3E%3Cline x1='31' y1='20' x2='28' y2='20'/%3E%3C/g%3E%3Cline x1='20' y1='20' x2='27' y2='12' stroke='%23e8734a' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='20' cy='20' r='3' fill='%235fd4c4'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <script src="script.js" defer></script>
 </head>
 <body>

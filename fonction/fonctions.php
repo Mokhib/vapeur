@@ -129,34 +129,36 @@ function obtenirJeuParId(PDO $pdo, int $idJeu)
 }
 
 // Ajoute un jeu au catalogue (réservé au panel administrateur).
-function ajouterJeu(PDO $pdo, string $titre, string $description, int $anneeSortie, string $developpeur, ?string $jaquette): bool
+function ajouterJeu(PDO $pdo, string $titre, string $description, int $anneeSortie, string $developpeur, string $support, ?string $jaquette): bool
 {
     $requete = $pdo->prepare(
-        'INSERT INTO games (title, description, release_year, developer, cover_image)
-         VALUES (:titre, :description, :anneeSortie, :developpeur, :jaquette)'
+        'INSERT INTO games (title, description, release_year, developer, support, cover_image)
+         VALUES (:titre, :description, :anneeSortie, :developpeur, :support, :jaquette)'
     );
     return $requete->execute(array(
         'titre' => $titre,
         'description' => $description,
         'anneeSortie' => $anneeSortie,
         'developpeur' => $developpeur,
+        'support' => $support,
         'jaquette' => $jaquette,
     ));
 }
 
 // Modifie un jeu existant. Si aucune nouvelle jaquette n'est fournie, l'ancienne est conservée.
-function modifierJeu(PDO $pdo, int $idJeu, string $titre, string $description, int $anneeSortie, string $developpeur, ?string $nouvelleJaquette): bool
+function modifierJeu(PDO $pdo, int $idJeu, string $titre, string $description, int $anneeSortie, string $developpeur, string $support, ?string $nouvelleJaquette): bool
 {
     if ($nouvelleJaquette !== null) {
         $requete = $pdo->prepare(
             'UPDATE games SET title = :titre, description = :description, release_year = :anneeSortie,
-             developer = :developpeur, cover_image = :jaquette WHERE id_game = :idJeu'
+             developer = :developpeur, support = :support, cover_image = :jaquette WHERE id_game = :idJeu'
         );
         return $requete->execute(array(
             'titre' => $titre,
             'description' => $description,
             'anneeSortie' => $anneeSortie,
             'developpeur' => $developpeur,
+            'support' => $support,
             'jaquette' => $nouvelleJaquette,
             'idJeu' => $idJeu,
         ));
@@ -164,15 +166,31 @@ function modifierJeu(PDO $pdo, int $idJeu, string $titre, string $description, i
 
     $requete = $pdo->prepare(
         'UPDATE games SET title = :titre, description = :description, release_year = :anneeSortie,
-         developer = :developpeur WHERE id_game = :idJeu'
+         developer = :developpeur, support = :support WHERE id_game = :idJeu'
     );
     return $requete->execute(array(
         'titre' => $titre,
         'description' => $description,
         'anneeSortie' => $anneeSortie,
         'developpeur' => $developpeur,
+        'support' => $support,
         'idJeu' => $idJeu,
     ));
+}
+
+// Joint un tableau de supports cochés en une chaîne séparée par des virgules (ex. "PC,Console").
+function joindreSupports(array $supports): string
+{
+    $resultat = '';
+    $i = 0;
+    foreach ($supports as $support) {
+        if ($i > 0) {
+            $resultat .= ',';
+        }
+        $resultat .= $support;
+        $i++;
+    }
+    return $resultat;
 }
 
 // Supprime un jeu (et ses avis, via ON DELETE CASCADE) du catalogue.
@@ -206,7 +224,7 @@ function traiterJaquette(?array $fichier): ?string
 
     // Préfixe horodaté pour éviter d'écraser un fichier existant portant le même nom.
     $nomFichier = date('YmdHis') . '_' . basename($fichier['name']);
-    return move_uploaded_file($fichier['tmp_name'], 'images/' . $nomFichier) ? $nomFichier : null;
+    return move_uploaded_file($fichier['tmp_name'], DOSSIER_SITE . '/images/' . $nomFichier) ? $nomFichier : null;
 }
 
 // --- Avis --------------------------------------------------------------------
